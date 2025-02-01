@@ -1,9 +1,71 @@
+//imports
+
+import bridges.base.LineChart;
+import bridges.connect.Bridges;
+import bridges.validation.RateLimitException;
+
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.util.Properties;
+
 /**
  * Used to measure the time certain sorting take with different size arrays
+ *
  */
 public class Sorts {
+
+    /**
+     * Connects to BRIDGES API using a username and API key
+     * @return new Bridges Object
+     */
+    public static Bridges initializeBridges(){
+        Properties properties = new Properties();
+        try{
+            //Change file path for your application.properties file (for .gitignore)
+            properties.load(new FileInputStream(".idea/application.properties"));
+        } catch (IOException e) {
+            throw new RuntimeException("Problem with application.properties file OR file may not exist.");
+        }
+        //Use your BRIDGES API username and API key in the second and third params
+        Bridges bridges = new Bridges(1, properties.getProperty("user"),properties.getProperty("key"));
+        bridges.setTitle("Sort Test");
+        bridges.setDescription("Used to measure the time certain sorting take with different size arrays");
+
+        return bridges;
+
+    }
+
+    /**
+     * Used to line plots based on data from Sort tests.
+     * Would be best used for different sized arrays for same sort alg
+     * A link will be put in the console to show the chart
+     * @param xVals size of array made (recommended)
+     * @param yVals time in milliseconds taken (recommended)
+     */
+    public static void makeLinePlot(double[] xVals, double[] yVals){
+        Bridges bridge = initializeBridges();
+        LineChart plot = new LineChart();
+        plot.setDataSeries("Sort Algorithm Array Size vs Time taken",xVals,yVals);
+        //Formatting look of plot
+        plot.setTitle("Sort Algorithm Array Size vs Time taken");
+        bridge.setDataStructure(plot);
+        plot.setXLabel("Array Size");
+        plot.setYLabel("Time to sort (in Seconds)");
+        plot.toggleMouseTrack(true);
+
+
+        //Catch any problems with visualization
+        try {
+            bridge.visualize();
+        } catch (IOException | RateLimitException e) {
+            throw new RuntimeException("Problem with visualization.");
+        }
+
+    }
+
     /**
      * returns the time elapsed in milliseconds for bubble sort (Best O(n) | Average/Worst O(n^2)
+     * @param array array to be sorted
      * @return time elapsed in milliseconds
      */
     public static long BubbleSortTest(int[] array){
@@ -50,12 +112,14 @@ public class Sorts {
                 }
             }
         }
-        return;
+        return 1;
     }
 
 
-    public static void main(String[] args) {
-
+    public static void main(String[] args){
+        double[] exampleX = new double[]{1,3,6};
+        double[] exampleY = new double[]{3,7,10};
+        makeLinePlot(exampleX,exampleY);
     }
 }
 
