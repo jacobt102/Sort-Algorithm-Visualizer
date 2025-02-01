@@ -39,26 +39,29 @@ public class Sorts {
      * Used to line plots based on data from Sort tests.
      * Would be best used for different sized arrays for same sort alg
      * A link will be put in the console to show the chart
-     * @param xVals size of array made (recommended)
-     * @param yVals time in milliseconds taken (recommended)
+     * @param bubbleXVals size of array made (recommended)
+     * @param bubbleYVals time in milliseconds taken for bubble sort(recommended)
+     * @param selectionX size of array for selection sort (should be the same as "bubbleXVals" for simplicity)
+     * @param selectionY time in milliseconds take for selection sort
      */
-    public static void makeLinePlot(double[] xVals, double[] yVals){
+    public static void makeLinePlot(double[] bubbleXVals, double[] bubbleYVals, double[] selectionX, double[] selectionY){
         Bridges bridge = initializeBridges();
         LineChart plot = new LineChart();
-        plot.setDataSeries("Sort Algorithm Array Size vs Time taken",xVals,yVals);
+        plot.setDataSeries("Bubble Algorithm Array Size vs Time taken", bubbleXVals, bubbleYVals);
         //Formatting look of plot
         plot.setTitle("Sort Algorithm Array Size vs Time taken");
         bridge.setDataStructure(plot);
         plot.setXLabel("Array Size");
-        plot.setYLabel("Time to sort (in Seconds)");
+        plot.setYLabel("Time Taken to sort (in Milliseconds)");
         plot.toggleMouseTrack(true);
+        plot.setDataSeries("Selection Algorithm Array Size vs Time taken", selectionX, selectionY);
 
 
         //Catch any problems with visualization
         try {
             bridge.visualize();
         } catch (IOException | RateLimitException e) {
-            throw new RuntimeException("Problem with visualization.");
+            throw new RuntimeException("Problem with visualization. Check program and try again");
         }
 
     }
@@ -69,11 +72,7 @@ public class Sorts {
      * @return time elapsed in milliseconds
      */
     public static long BubbleSortTest(int[] array){
-        //Fills with random ints 1-100
-        for(int i = 0; i < array.length; i++){
-            array[i] = (int)(Math.random()*100);
 
-        }
         long startTime = System.nanoTime(); //Logs start time
         for(int i = 1; i < array.length; i++ ){
             for(int j = 0; j < array.length; j++){
@@ -98,28 +97,42 @@ public class Sorts {
     }
 
     /**
-     * Use selection sort alg based on size and records time elapsed
+     * Fills array with of random ints 1-100
+     * @param array array to be filled
+     * @return array with new filled slots (for quick samples)
+     */
+    public static int[] fillArray(int[] array){
+        for(int i = 0; i < array.length-1; i++){
+            array[i] = (int)(Math.random()*100);
+        }
+        return array;
+    }
+
+    /**
+     * Use selection sort alg based on size and records time elapsed (Continuously swaps smallest element of unsorted portion of array
+     * with the beginning of the unsorted portion
      * (suitable for small sets) | Best and Worst Case O(n^2)
      * @return time elapsed for sort in nanoseconds
      */
     public static long SelectionSortTest(int[] array){
+        long startTime = System.nanoTime();
         for(int j = 0; j < array.length; j++) { //j=beginning of unsorted portion
-            int lowestIndex = 0;
+            int lowestIndex = j;
 
-            for (int i = 0; i < array.length; i++) {
+            for (int i = j; i < array.length; i++) {
                 if (array[i] < array[lowestIndex]) {
                     lowestIndex = i;
                 }
             }
+            if(lowestIndex!=j){
+                int temp = array[lowestIndex];
+                array[lowestIndex] = array[j];
+                array[j] = temp;
+            }
         }
-        return 1;
+        long endTime = System.nanoTime();
+        return endTime-startTime;
     }
 
-
-    public static void main(String[] args){
-        double[] exampleX = new double[]{1,3,6};
-        double[] exampleY = new double[]{3,7,10};
-        makeLinePlot(exampleX,exampleY);
-    }
 }
 
