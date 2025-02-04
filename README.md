@@ -21,6 +21,7 @@ This project implements and compares sorting algorithms such as **Selection Sort
 2. **BRIDGES API Account**:
     - Sign up for a free BRIDGES account at [BRIDGES](http://bridgesuncc.github.io/).
     - Obtain your BRIDGES username and API key from your account.
+    - Download the latest .jar file for [BRIDGES](http://bridgesuncc.github.io/). 
 
 ## Setting Up the Project
 1. Clone or download this repository to your computer.
