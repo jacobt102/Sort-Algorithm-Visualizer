@@ -9,8 +9,8 @@ import java.util.Properties;
 
 
 /**
- * Used to measure the time certain sorting take with different size arrays and creates plot graph
- *
+ * Used to measure the time selection and bubble sort take with different size arrays and creates plot graph
+ * Adjust assignment numbers to save previous Line Plots on Bridges website
  */
 public class Sorts {
 
@@ -29,9 +29,8 @@ public class Sorts {
         //Use your BRIDGES API username and API key in the second and third params
         //Adjust assignment num as needed
         Bridges bridges = new Bridges(assignmentNum, properties.getProperty("user"),properties.getProperty("key"));
-        bridges.setTitle("Sort Test");
-        bridges.setDescription("Used to measure the time certain sorting take with different size arrays");
-
+        bridges.setTitle("Selection & Bubble Sort Test");
+        bridges.setDescription("Used to measure the time selection and bubble sort take with different size arrays");
         return bridges;
 
     }
@@ -39,7 +38,7 @@ public class Sorts {
     /**
      * Used to line plots based on data from Sort tests.
      * Would be best used for different sized arrays for same sort alg
-     * A link will be put in the console to show the chart.
+     * A link will be put in the console to show the chart on Bridges website.
      * Use nanoToMilliseconds method for conversion
      * @param bubbleXVals array of sizes of arrays sorted (recommended)
      * @param bubbleYVals time in milliseconds taken for bubble sort(recommended)
@@ -70,7 +69,7 @@ public class Sorts {
     }
 
     /**
-     *
+     * Override makeLinePlot that takes in an array of sizes to be charted
      * @param arraySizes size of arrays to be sorted and compared in visualization
      * @param assignmentNum assignment number for BRIDGES
      */
@@ -135,7 +134,7 @@ public class Sorts {
     }
 
     /**
-     * Use selection sort alg based on size and records time elapsed (Continuously swaps smallest element of unsorted portion of array
+     * Uses selection sort alg based on size and records time elapsed (Continuously swaps smallest element of unsorted portion of array
      * with the beginning of the unsorted portion
      * (suitable for small sets) | Best and Worst Case O(n^2)
      * @param size size of array to be sorted
