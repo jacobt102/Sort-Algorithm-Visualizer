@@ -71,22 +71,21 @@ public class Sorts {
 
     /**
      *
-     * @param bubbleArraySizes array of vals for bubble sort (should be the same size as "selectionArraySizes"
-     * @param selectionArraySizes array of vals for bubble sort array sizes
+     * @param arraySizes size of arrays to be sorted and compared in visualization
      * @param assignmentNum assignment number for BRIDGES
      */
-    public static void makeLinePlot(double[] bubbleArraySizes, double[] selectionArraySizes, int assignmentNum){
-        double[] bubbleTimes = new double[bubbleArraySizes.length];
-        double[] selectionTimes = new double[selectionArraySizes.length];
+    public static void makeLinePlot(double[] arraySizes, int assignmentNum){
+        double[] bubbleTimes = new double[arraySizes.length];
+        double[] selectionTimes = new double[arraySizes.length];
         long currentTime = 0L;
         for (int i = 0; i < bubbleTimes.length; i++) {
-            currentTime = BubbleSortTest((int) bubbleArraySizes[i]);
+            currentTime = BubbleSortTest((int) arraySizes[i]);
             bubbleTimes[i] = nanoToMilliseconds(currentTime);
-            currentTime = SelectionSortTest((int) selectionArraySizes[i]);
+            currentTime = SelectionSortTest((int) arraySizes[i]);
             selectionTimes[i] = nanoToMilliseconds(currentTime);
         }
         
-        makeLinePlot(bubbleArraySizes,bubbleTimes,selectionArraySizes,selectionTimes,assignmentNum);
+            makeLinePlot(arraySizes,bubbleTimes,arraySizes,selectionTimes,assignmentNum);
 
     }
 
