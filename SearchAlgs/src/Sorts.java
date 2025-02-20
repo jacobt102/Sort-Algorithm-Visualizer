@@ -70,7 +70,7 @@ public class Sorts {
     }
 
     /**
-     *
+     * Overriden makeLinePlot that takes in an array of sizes to be charted
      * @param arraySizes size of arrays to be sorted and compared in visualization
      * @param assignmentNum assignment number for BRIDGES
      */
