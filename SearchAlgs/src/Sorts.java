@@ -1,10 +1,15 @@
 //imports
+
 import bridges.base.LineChart;
 import bridges.connect.Bridges;
 import bridges.validation.RateLimitException;
 
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.Properties;
 
 
@@ -34,6 +39,22 @@ public class Sorts {
         return bridges;
 
     }
+    public static Connection initializeDataBase(){
+        Properties properties = new Properties();
+        try{
+            //Change file path for your application.properties file (for .gitignore)
+            properties.load(new FileInputStream(".idea/application.properties"));
+        } catch (IOException e) {
+            throw new RuntimeException("Problem with application.properties file or file may not exist.");
+        }
+        try {
+            Connection connection = DriverManager.getConnection(properties.getProperty("url"),properties.getProperty("user"),properties.getProperty("sqlpwd"));
+            System.out.println("Success!");
+            return connection;
+        } catch (SQLException e) {
+            System.out.print("Connection to SQL failed");
+        }
+    }
 
     /**
      * Used to line plots based on data from Sort tests.
@@ -44,9 +65,11 @@ public class Sorts {
      * @param bubbleYVals time in milliseconds taken for bubble sort(recommended)
      * @param selectionX size of array for selection sort (should be the same as "bubbleXVals" for simplicity)
      * @param selectionY time in milliseconds take for selection sort
+     * @param assignmentNum assignment number for current Line Plot
      */
     public static void makeLinePlot(double[] bubbleXVals, double[] bubbleYVals, double[] selectionX, double[] selectionY,int assignmentNum){
         Bridges bridge = initializeBridges(assignmentNum);
+
         LineChart plot = new LineChart();
         plot.setDataSeries("Bubble Sort Algorithm Array Size vs Time taken", bubbleXVals, bubbleYVals);
         //Formatting look of plot graph. Adjust data series names if changing functionality
@@ -74,14 +97,23 @@ public class Sorts {
      * @param assignmentNum assignment number for BRIDGES
      */
     public static void makeLinePlot(double[] arraySizes, int assignmentNum){
+        //arrays to store time sort times of each sort type
         double[] bubbleTimes = new double[arraySizes.length];
         double[] selectionTimes = new double[arraySizes.length];
+        String newQuery = "INSERT into SortResults (array_size, sort_type, time_taken)";
+        Connection db = initializeDataBase();
         long currentTime = 0L;
         for (int i = 0; i < bubbleTimes.length; i++) {
             currentTime = BubbleSortTest((int) arraySizes[i]);
             bubbleTimes[i] = nanoToMilliseconds(currentTime);
             currentTime = SelectionSortTest((int) arraySizes[i]);
             selectionTimes[i] = nanoToMilliseconds(currentTime);
+
+            try {
+                PreparedStatement statement = db.prepareStatement(newQuery);
+            } catch (SQLException e) {
+                System.out.println("Issue with SQL database ");
+            }
         }
         
             makeLinePlot(arraySizes,bubbleTimes,arraySizes,selectionTimes,assignmentNum);
@@ -97,6 +129,7 @@ public class Sorts {
         //creates an array of "size" length and fills with random numbers
         int[] array = new int[size];
         fillArray(array);
+
         long startTime = System.nanoTime(); //Logs start time
         for(int i = 1; i < array.length; i++ ){
             for(int j = 0; j < array.length; j++){
@@ -130,6 +163,7 @@ public class Sorts {
         for(int i = 0; i < array.length; i++){
             array[i] = (int)(Math.random()*100);
         }
+
         return array;
     }
 
