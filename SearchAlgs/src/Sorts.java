@@ -66,7 +66,6 @@ public class Sorts {
         try {
             Connection connection = DriverManager.getConnection(properties.getProperty("url"),properties.getProperty("user"),properties.getProperty("sqlpwd"));
             System.out.println("Success!");
-            connection.e
             return connection;
         } catch (SQLException e) {
             System.out.print("Connection to SQL failed");
