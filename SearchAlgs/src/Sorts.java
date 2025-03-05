@@ -10,6 +10,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.Properties;
 
 
@@ -39,6 +40,21 @@ public class Sorts {
         return bridges;
 
     }
+    //Initializes connection with MySQL database
+
+    /**
+     * TODO: Add implementation to make table for other users (prepare statement)
+     * CREATE DATABASE SortingDB;
+     * USE SortingDB;
+     *
+     * CREATE table SortResults (
+     *     id INT AUTO_INCREMENT PRIMARY KEY,
+     *     sort_type enum ('Selection', 'Bubble') not null,
+     *     array_size INT NOT NULL,
+     *     time_taken long NOT NULL      -- Execution time in milliseconds
+     * );
+     *
+     */
     public static Connection initializeDataBase(){
         Properties properties = new Properties();
         try{
@@ -50,10 +66,12 @@ public class Sorts {
         try {
             Connection connection = DriverManager.getConnection(properties.getProperty("url"),properties.getProperty("user"),properties.getProperty("sqlpwd"));
             System.out.println("Success!");
+            connection.e
             return connection;
         } catch (SQLException e) {
             System.out.print("Connection to SQL failed");
         }
+        return null;
     }
 
     /**
@@ -100,23 +118,37 @@ public class Sorts {
         //arrays to store time sort times of each sort type
         double[] bubbleTimes = new double[arraySizes.length];
         double[] selectionTimes = new double[arraySizes.length];
-        String newQuery = "INSERT into SortResults (array_size, sort_type, time_taken)";
-        Connection db = initializeDataBase();
-        long currentTime = 0L;
-        for (int i = 0; i < bubbleTimes.length; i++) {
-            currentTime = BubbleSortTest((int) arraySizes[i]);
-            bubbleTimes[i] = nanoToMilliseconds(currentTime);
-            currentTime = SelectionSortTest((int) arraySizes[i]);
-            selectionTimes[i] = nanoToMilliseconds(currentTime);
+        Arrays.sort(arraySizes);
+        String newQuery = "INSERT into SortResults (sort_type, array_size, time_taken) VALUES (?, ?, ?);";
+        try (Connection db = initializeDataBase()) {
+            long currentTime = 0L;
+            for (int i = 0; i < bubbleTimes.length; i++) {
+                currentTime = BubbleSortTest((int) arraySizes[i]);
+                bubbleTimes[i] = nanoToMilliseconds(currentTime);
+                long currentBubbleTime = currentTime;
+                currentTime = SelectionSortTest((int) arraySizes[i]);
+                selectionTimes[i] = nanoToMilliseconds(currentTime);
+                long currentSelectionTime =  currentTime;
 
-            try {
-                PreparedStatement statement = db.prepareStatement(newQuery);
-            } catch (SQLException e) {
-                System.out.println("Issue with SQL database ");
+                try {
+                    PreparedStatement statement = db.prepareStatement(newQuery);
+                    statement.setString(1, "Bubble");
+                    statement.setInt(2, (int) arraySizes[i]);
+                    statement.setLong(3,currentBubbleTime);
+                    statement.executeUpdate();
+                    statement.setString(1,"Selection");
+                    statement.setLong(3,currentSelectionTime);
+                    statement.executeUpdate();
+
+                } catch (SQLException e) {
+                    System.out.println("Issue with SQL database ");
+                }
             }
+        } catch (SQLException e) {
+            throw new RuntimeException("SQL implementation failed");
         }
-        
-            makeLinePlot(arraySizes,bubbleTimes,arraySizes,selectionTimes,assignmentNum);
+
+        makeLinePlot(arraySizes,bubbleTimes,arraySizes,selectionTimes,assignmentNum);
 
     }
 
