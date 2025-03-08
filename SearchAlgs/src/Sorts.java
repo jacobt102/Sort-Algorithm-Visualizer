@@ -1,16 +1,22 @@
 //imports
+
 import bridges.base.LineChart;
 import bridges.connect.Bridges;
 import bridges.validation.RateLimitException;
 
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.Properties;
 
 
 /**
- * Used to measure the time certain sorting take with different size arrays and creates plot graph
- *
+ * Used to measure the time selection and bubble sort take with different size arrays and creates plot graph
+ * Adjust assignment numbers to save previous Line Plots on Bridges website
  */
 public class Sorts {
 
@@ -29,25 +35,58 @@ public class Sorts {
         //Use your BRIDGES API username and API key in the second and third params
         //Adjust assignment num as needed
         Bridges bridges = new Bridges(assignmentNum, properties.getProperty("user"),properties.getProperty("key"));
-        bridges.setTitle("Sort Test");
-        bridges.setDescription("Used to measure the time certain sorting take with different size arrays");
-
+        bridges.setTitle("Selection & Bubble Sort Test");
+        bridges.setDescription("Used to measure the time selection and bubble sort take with different size arrays");
         return bridges;
 
+    }
+    //Initializes connection with MySQL database
+
+    /**
+     * TODO: Add implementation to make table for other users (prepare statement)
+     * CREATE DATABASE SortingDB;
+     * USE SortingDB;
+     *
+     * CREATE table SortResults (
+     *     id INT AUTO_INCREMENT PRIMARY KEY,
+     *     sort_type enum ('Selection', 'Bubble') not null,
+     *     array_size INT NOT NULL,
+     *     time_taken long NOT NULL      -- Execution time in milliseconds
+     * );
+     *
+     */
+    public static Connection initializeDataBase(){
+        Properties properties = new Properties();
+        try{
+            //Change file path for your application.properties file (for .gitignore)
+            properties.load(new FileInputStream(".idea/application.properties"));
+        } catch (IOException e) {
+            throw new RuntimeException("Problem with application.properties file or file may not exist.");
+        }
+        try {
+            Connection connection = DriverManager.getConnection(properties.getProperty("url"),properties.getProperty("user"),properties.getProperty("sqlpwd"));
+            System.out.println("Success!");
+            return connection;
+        } catch (SQLException e) {
+            System.out.print("Connection to SQL failed");
+        }
+        return null;
     }
 
     /**
      * Used to line plots based on data from Sort tests.
      * Would be best used for different sized arrays for same sort alg
-     * A link will be put in the console to show the chart.
+     * A link will be put in the console to show the chart on Bridges website.
      * Use nanoToMilliseconds method for conversion
      * @param bubbleXVals array of sizes of arrays sorted (recommended)
      * @param bubbleYVals time in milliseconds taken for bubble sort(recommended)
      * @param selectionX size of array for selection sort (should be the same as "bubbleXVals" for simplicity)
      * @param selectionY time in milliseconds take for selection sort
+     * @param assignmentNum assignment number for current Line Plot
      */
     public static void makeLinePlot(double[] bubbleXVals, double[] bubbleYVals, double[] selectionX, double[] selectionY,int assignmentNum){
         Bridges bridge = initializeBridges(assignmentNum);
+
         LineChart plot = new LineChart();
         plot.setDataSeries("Bubble Sort Algorithm Array Size vs Time taken", bubbleXVals, bubbleYVals);
         //Formatting look of plot graph. Adjust data series names if changing functionality
@@ -70,22 +109,45 @@ public class Sorts {
     }
 
     /**
-     * Overriden makeLinePlot that takes in an array of sizes to be charted
+     * Override makeLinePlot that takes in an array of sizes to be charted
      * @param arraySizes size of arrays to be sorted and compared in visualization
      * @param assignmentNum assignment number for BRIDGES
      */
     public static void makeLinePlot(double[] arraySizes, int assignmentNum){
+        //arrays to store time sort times of each sort type
         double[] bubbleTimes = new double[arraySizes.length];
         double[] selectionTimes = new double[arraySizes.length];
-        long currentTime = 0L;
-        for (int i = 0; i < bubbleTimes.length; i++) {
-            currentTime = BubbleSortTest((int) arraySizes[i]);
-            bubbleTimes[i] = nanoToMilliseconds(currentTime);
-            currentTime = SelectionSortTest((int) arraySizes[i]);
-            selectionTimes[i] = nanoToMilliseconds(currentTime);
+        Arrays.sort(arraySizes);
+        String newQuery = "INSERT into SortResults (sort_type, array_size, time_taken) VALUES (?, ?, ?);";
+        try (Connection db = initializeDataBase()) {
+            long currentTime = 0L;
+            for (int i = 0; i < bubbleTimes.length; i++) {
+                currentTime = BubbleSortTest((int) arraySizes[i]);
+                bubbleTimes[i] = nanoToMilliseconds(currentTime);
+                long currentBubbleTime = currentTime;
+                currentTime = SelectionSortTest((int) arraySizes[i]);
+                selectionTimes[i] = nanoToMilliseconds(currentTime);
+                long currentSelectionTime =  currentTime;
+
+                try {
+                    PreparedStatement statement = db.prepareStatement(newQuery);
+                    statement.setString(1, "Bubble");
+                    statement.setInt(2, (int) arraySizes[i]);
+                    statement.setLong(3,currentBubbleTime);
+                    statement.executeUpdate();
+                    statement.setString(1,"Selection");
+                    statement.setLong(3,currentSelectionTime);
+                    statement.executeUpdate();
+
+                } catch (SQLException e) {
+                    System.out.println("Issue with SQL database ");
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("SQL implementation failed");
         }
-        
-            makeLinePlot(arraySizes,bubbleTimes,arraySizes,selectionTimes,assignmentNum);
+
+        makeLinePlot(arraySizes,bubbleTimes,arraySizes,selectionTimes,assignmentNum);
 
     }
 
@@ -98,6 +160,7 @@ public class Sorts {
         //creates an array of "size" length and fills with random numbers
         int[] array = new int[size];
         fillArray(array);
+
         long startTime = System.nanoTime(); //Logs start time
         for(int i = 1; i < array.length; i++ ){
             for(int j = 0; j < array.length; j++){
@@ -131,11 +194,12 @@ public class Sorts {
         for(int i = 0; i < array.length; i++){
             array[i] = (int)(Math.random()*100);
         }
+
         return array;
     }
 
     /**
-     * Use selection sort alg based on size and records time elapsed (Continuously swaps smallest element of unsorted portion of array
+     * Uses selection sort alg based on size and records time elapsed (Continuously swaps smallest element of unsorted portion of array
      * with the beginning of the unsorted portion
      * (suitable for small sets) | Best and Worst Case O(n^2)
      * @param size size of array to be sorted
