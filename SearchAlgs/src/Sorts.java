@@ -40,21 +40,7 @@ public class Sorts {
         return bridges;
 
     }
-    //Initializes connection with MySQL database
-
-    /**
-     * TODO: Add implementation to make table for other users (prepare statement)
-     * CREATE DATABASE SortingDB;
-     * USE SortingDB;
-     *
-     * CREATE table SortResults (
-     *     id INT AUTO_INCREMENT PRIMARY KEY,
-     *     sort_type enum ('Selection', 'Bubble') not null,
-     *     array_size INT NOT NULL,
-     *     time_taken long NOT NULL      -- Execution time in milliseconds
-     * );
-     *
-     */
+    //Initializes connection with MySQL database and sets up table to store sorting results
     public static Connection initializeDataBase(){
         Properties properties = new Properties();
         try{
@@ -66,9 +52,14 @@ public class Sorts {
         try {
             Connection connection = DriverManager.getConnection(properties.getProperty("url"),properties.getProperty("user"),properties.getProperty("sqlpwd"));
             System.out.println("Success!");
+            //Sets up database and table environment if it doesn't exist
+            String makeDatabase = "CREATE DATABASE IF NOT EXISTS SortingDB";
+            connection.createStatement().execute(makeDatabase);
+            connection.createStatement().execute("USE SortingDB");
+            connection.createStatement().execute("CREATE TABLE IF NOT EXISTS SortResults (id INT AUTO_INCREMENT PRIMARY KEY, sort_type enum ('Selection', 'Bubble') not null, array_size INT NOT NULL, time_taken DOUBLE NOT NULL);");
             return connection;
         } catch (SQLException e) {
-            System.out.print("Connection to SQL failed");
+            System.out.println("Connection to SQL failed with message " + e.getMessage());
         }
         return null;
     }
@@ -118,35 +109,43 @@ public class Sorts {
         double[] bubbleTimes = new double[arraySizes.length];
         double[] selectionTimes = new double[arraySizes.length];
         Arrays.sort(arraySizes);
+        //Query to insert results into table using a prepared statement
         String newQuery = "INSERT into SortResults (sort_type, array_size, time_taken) VALUES (?, ?, ?);";
         try (Connection db = initializeDataBase()) {
             long currentTime = 0L;
             for (int i = 0; i < bubbleTimes.length; i++) {
+                //Performs bubble sort on current array size and converts to milliseconds
                 currentTime = BubbleSortTest((int) arraySizes[i]);
                 bubbleTimes[i] = nanoToMilliseconds(currentTime);
-                long currentBubbleTime = currentTime;
+                double currentBubbleTime = bubbleTimes[i];
+                //Performs selection sort test on current array size and converts to milliseconds
                 currentTime = SelectionSortTest((int) arraySizes[i]);
                 selectionTimes[i] = nanoToMilliseconds(currentTime);
-                long currentSelectionTime =  currentTime;
+                double currentSelectionTime = selectionTimes[i];
 
                 try {
+                    //Inserting sort type, array size, and time taken into SQL database
                     PreparedStatement statement = db.prepareStatement(newQuery);
                     statement.setString(1, "Bubble");
                     statement.setInt(2, (int) arraySizes[i]);
-                    statement.setLong(3,currentBubbleTime);
+                    statement.setDouble(3,currentBubbleTime);
                     statement.executeUpdate();
                     statement.setString(1,"Selection");
-                    statement.setLong(3,currentSelectionTime);
+                    statement.setDouble(3,currentSelectionTime);
                     statement.executeUpdate();
-
+                    statement.close();
                 } catch (SQLException e) {
+                    //Catches issues with inserting data into database
                     System.out.println("Issue with SQL database ");
                 }
             }
+
         } catch (SQLException e) {
+            //Catches if database connection cannot be established.
             throw new RuntimeException("SQL implementation failed");
         }
 
+        //Creates line plot using BRIDGES with data from selection and bubble sort tests
         makeLinePlot(arraySizes,bubbleTimes,arraySizes,selectionTimes,assignmentNum);
 
     }
